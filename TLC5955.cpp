@@ -119,17 +119,6 @@ void TLC5955::setRgbPinOrderSingle(uint16_t led_number, uint8_t rPos, uint8_t gr
   _rgb_order[chip][channel][2] = bPos;
 }
 
-void TLC5955::printByte(uint8_t my_byte)
-{
-  for (uint8_t mask = 0x80; mask; mask >>= 1)
-  {
-    if (mask  & my_byte)
-      Serial.print('1');
-    else
-      Serial.print('0');
-  }
-}
-
 void TLC5955::setAllLed(uint16_t gsvalue)
 {
   for (int8_t chip = _tlc_count - 1; chip >= 0; chip--)
@@ -181,27 +170,16 @@ void TLC5955::setControlModeBit(bool is_control_mode)
   pinMode(_spi_clk, OUTPUT);
 
   // Manually write control sequence
-  if (is_control_mode)
-  {
+  if (is_control_mode) {
     // Manually Write control sequence
     digitalWrite(_spi_mosi, HIGH);          // Set MSB to HIGH
     digitalWrite(_spi_clk, LOW);                  // Clock
     // Pulse
     digitalWrite(_spi_clk, HIGH);
     digitalWrite(_spi_clk, LOW);
-    shiftOut(_spi_mosi, _spi_clk, MSBFIRST, B10010110);                 // see
-    // datasheet
-    // HLLHLHHL
-    if (debug >= 2)
-    {
-      Serial.print('1');
-      printByte(B10010110);
-    }
-  } else
-  {
-    if (debug >= 2)
-      Serial.print('0');
-
+    // see datasheet HLLHLHHL
+    shiftOut(_spi_mosi, _spi_clk, MSBFIRST, B10010110);
+  } else {
     digitalWrite(_spi_mosi, LOW); // Set MSB to LOW
     digitalWrite(_spi_clk, LOW); // Clock Pulse
     digitalWrite(_spi_clk, HIGH);
@@ -236,10 +214,6 @@ void TLC5955::updateLeds()
       return;
     }
   }
-  if (debug >= 2)
-  {
-    Serial.println(F("Begin LED Update String (All Chips)..."));
-  }
 
   // uint32_t power_output_counts = 0;
   for (int16_t chip = (int8_t)_tlc_count - 1; chip >= 0; chip--)
@@ -260,10 +234,6 @@ void TLC5955::updateLeds()
     SPI.endTransaction();
   }
 
-  if (debug >= 2)
-  {
-    Serial.println(F("End LED Update String (All Chips)"));
-  }
   latch();
 }
 
@@ -454,9 +424,6 @@ void TLC5955::updateControl()
   {
     for (int8_t chip = _tlc_count - 1; chip >= 0; chip--)
     {
-      if (debug >= 2)
-        Serial.println(F("Starting Control Mode... %s"));
-
       _buffer_count = 7;
       setControlModeBit(CONTROL_MODE_ON);
 
@@ -524,9 +491,6 @@ void TLC5955::setBuffer(uint8_t bit)
   SPI.beginTransaction(mSettings);
   if (_buffer_count == -1)
   {
-    if (debug >= 2)
-      printByte(_buffer);
-
     SPI.transfer(_buffer);
     _buffer_count = 7;
     _buffer = 0;
