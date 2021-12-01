@@ -170,7 +170,8 @@ void TLC5955::setControlModeBit(bool is_control_mode)
   pinMode(_spi_clk, OUTPUT);
 
   // Manually write control sequence
-  if (is_control_mode) {
+  if (is_control_mode)
+  {
     // Manually Write control sequence
     digitalWrite(_spi_mosi, HIGH);          // Set MSB to HIGH
     digitalWrite(_spi_clk, LOW);                  // Clock
@@ -179,7 +180,9 @@ void TLC5955::setControlModeBit(bool is_control_mode)
     digitalWrite(_spi_clk, LOW);
     // see datasheet HLLHLHHL
     shiftOut(_spi_mosi, _spi_clk, MSBFIRST, B10010110);
-  } else {
+  }
+  else
+  {
     digitalWrite(_spi_mosi, LOW); // Set MSB to LOW
     digitalWrite(_spi_clk, LOW); // Clock Pulse
     digitalWrite(_spi_clk, HIGH);
