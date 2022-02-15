@@ -517,12 +517,12 @@ void TLC5955::setBuffer(uint8_t bit)
 {
   bitWrite(_buffer, _buffer_count, bit);
   _buffer_count--;
-  SPI.beginTransaction(mSettings);
   if (_buffer_count == -1)
   {
+    SPI.beginTransaction(mSettings);
     SPI.transfer(_buffer);
     _buffer_count = 7;
     _buffer = 0;
+    SPI.endTransaction();
   }
-  SPI.endTransaction();
 }
