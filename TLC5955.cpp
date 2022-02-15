@@ -449,6 +449,7 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
 // Update the Control Register (changes settings)
 void TLC5955::updateControl()
 {
+  ssize_t a;
   for (int8_t repeatCtr = 0; repeatCtr < CONTROL_WRITE_COUNT; repeatCtr++)
   {
     for (int8_t chip = _tlc_count - 1; chip >= 0; chip--)
@@ -457,24 +458,30 @@ void TLC5955::updateControl()
       setControlModeBit(CONTROL_MODE_ON);
 
       // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
-      for (int16_t a = 0; a < CONTROL_ZERO_BITS; a++)
+
+      SPI.beginTransaction(mSettings);
+      for (a = 0; a + 16 < CONTROL_ZERO_BITS; a = a + 16)
+          SPI.transfer16(0);
+      SPI.endTransaction();
+
+      for (a; a < CONTROL_ZERO_BITS; a++)
         setBuffer(0);
       // 5-bit Function Data
-      for (int8_t a = FC_BITS - 1; a >= 0; a--)
+      for (a = FC_BITS - 1; a >= 0; a--)
         setBuffer((_function_data & (1 << a)));
       // Brightness Control Data
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[2] & (1 << a)));
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[1] & (1 << a)));
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[0] & (1 << a)));
       // Maximum Current Data
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[2] & (1 << a)));
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[1] & (1 << a)));
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[0] & (1 << a)));
 
       // Dot Correction Data
