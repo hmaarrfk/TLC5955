@@ -35,6 +35,7 @@
 
 #include <stdint.h>
 #include <SPI.h>
+#define TLC5955_COLOR_CHANNEL_COUNT 3
 
 class TLC5955
 {
@@ -86,7 +87,7 @@ void setGsclkFreq(uint32_t new_gsclk_frequency);
 uint32_t getGsclkFreq();
 
 static const uint8_t _tlc_count; // This
-static const uint8_t COLOR_CHANNEL_COUNT = 3;
+static const uint8_t COLOR_CHANNEL_COUNT = TLC5955_COLOR_CHANNEL_COUNT;
 static const uint8_t LEDS_PER_CHIP = 16;
 static bool enforce_max_current;
 static double max_current_amps;

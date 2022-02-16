@@ -44,6 +44,7 @@
 #define CONTROL_MODE_ON 1
 #define CONTROL_MODE_OFF 0
 
+
 void TLC5955::init(uint8_t gslat, uint8_t spi_mosi, uint8_t spi_clk, uint8_t gsclk)
 {
 
@@ -185,20 +186,15 @@ void TLC5955::setControlModeBit(bool is_control_mode)
   {
     // Manually Write control sequence
     digitalWrite(_spi_mosi, HIGH);          // Set MSB to HIGH
-    digitalWrite(_spi_clk, LOW);                  // Clock
-    // Pulse
-    digitalWrite(_spi_clk, HIGH);
-    digitalWrite(_spi_clk, LOW);
-    // see datasheet HLLHLHHL
-    shiftOut(_spi_mosi, _spi_clk, MSBFIRST, B10010110);
   }
   else
   {
     digitalWrite(_spi_mosi, LOW); // Set MSB to LOW
-    digitalWrite(_spi_clk, LOW); // Clock Pulse
-    digitalWrite(_spi_clk, HIGH);
-    digitalWrite(_spi_clk, LOW);
   }
+  // Clock Pulse
+  digitalWrite(_spi_clk, LOW);
+  digitalWrite(_spi_clk, HIGH);
+  digitalWrite(_spi_clk, LOW);
   SPI.begin();
 }
 
@@ -450,7 +446,7 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
 void TLC5955::updateControl()
 {
   ssize_t a;
-#if (COLOR_CHANNEL_COUNT == 3)
+#if (TLC5955_COLOR_CHANNEL_COUNT == 3)
   // Highly optimized for 3 channel count
   uint16_t dc0, dc1, dc2;
 
@@ -465,9 +461,14 @@ void TLC5955::updateControl()
       _buffer_count = 7;
       setControlModeBit(CONTROL_MODE_ON);
 
-      // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
 
       SPI.beginTransaction(mSettings);
+      // See Datasheet Figure 23 on Page 21
+      // https://www.ti.com/lit/ds/symlink/tlc5955.pdf
+      //  > DC, MC, BC, FC data writes are selected when the MSB[1:9] bits are 96h (HLLHLHHL)
+      //  MSB[0] is written in the setControlModeBit routine
+      SPI.transfer(B10010110);
+      // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
       for (a = 0; a + 16 < CONTROL_ZERO_BITS; a = a + 16)
           SPI.transfer16(0);
 
@@ -494,7 +495,7 @@ void TLC5955::updateControl()
         setBuffer((_MC[0] & (1 << a)));
 
       // Dot Correction Data
-#if (COLOR_CHANNEL_COUNT == 3)
+#if (TLC5955_COLOR_CHANNEL_COUNT == 3)
       for (a = 0; a < LEDS_PER_CHIP / 2; a ++){
           SPI.transfer(dc0);
           SPI.transfer(dc1);
