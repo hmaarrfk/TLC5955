@@ -72,8 +72,6 @@ void setRgbPinOrder(uint8_t rPos, uint8_t grPos, uint8_t bPos);
 void setPinOrderSingle(uint16_t channel, uint8_t color_channel_index, uint8_t position);
 void setRgbPinOrderSingle(uint16_t channel, uint8_t rPos, uint8_t grPos, uint8_t bPos);
 
-/* Sending data to device (Updating, flushing, latching) */
-void setBuffer(uint8_t bit);
 void setControlModeBit(bool isControlMode);
 void flushBuffer();
 // Returns 0 for success, other for failure
@@ -99,6 +97,8 @@ static uint16_t _grayscale_data[][LEDS_PER_CHIP][COLOR_CHANNEL_COUNT];
 uint8_t rgb_order_default[3] = {0, 1, 2};
 
 private:
+  /* Sending data to device (Updating, flushing, latching) */
+  void setBuffer(uint8_t bit);
   uint8_t _gslat;
   uint8_t _spi_mosi;
   uint8_t _spi_clk;

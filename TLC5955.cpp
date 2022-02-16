@@ -450,6 +450,14 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
 void TLC5955::updateControl()
 {
   ssize_t a;
+#if (COLOR_CHANNEL_COUNT == 3)
+  // Highly optimized for 3 channel count
+  uint16_t dc0, dc1, dc2;
+
+  dc0 = (_DC[2] << 7) | (_DC[1] << 0);
+  dc1 = (_DC[0] << 7) | (_DC[2] << 0);
+  dc2 = (_DC[1] << 7) | (_DC[0] << 0);
+#endif
   for (int8_t repeatCtr = 0; repeatCtr < CONTROL_WRITE_COUNT; repeatCtr++)
   {
     for (int8_t chip = _tlc_count - 1; chip >= 0; chip--)
@@ -462,13 +470,13 @@ void TLC5955::updateControl()
       SPI.beginTransaction(mSettings);
       for (a = 0; a + 16 < CONTROL_ZERO_BITS; a = a + 16)
           SPI.transfer16(0);
-      SPI.endTransaction();
 
-      for (a; a < CONTROL_ZERO_BITS; a++)
+      for (; a < CONTROL_ZERO_BITS; a++)
         setBuffer(0);
       // 5-bit Function Data
       for (a = FC_BITS - 1; a >= 0; a--)
         setBuffer((_function_data & (1 << a)));
+
       // Brightness Control Data
       for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[2] & (1 << a)));
@@ -476,6 +484,7 @@ void TLC5955::updateControl()
         setBuffer((_BC[1] & (1 << a)));
       for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[0] & (1 << a)));
+
       // Maximum Current Data
       for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[2] & (1 << a)));
@@ -485,14 +494,24 @@ void TLC5955::updateControl()
         setBuffer((_MC[0] & (1 << a)));
 
       // Dot Correction Data
-      for (int8_t a = LEDS_PER_CHIP - 1; a >= 0; a--)
+#if (COLOR_CHANNEL_COUNT == 3)
+      for (a = 0; a < LEDS_PER_CHIP / 2; a ++){
+          SPI.transfer(dc0);
+          SPI.transfer(dc1);
+          SPI.transfer(dc2);
+      }
+#else
+#warning Not using optimized dot correction settings
+      for (a = LEDS_PER_CHIP - 1; a >= 0; a--)
       {
         for (int8_t b = COLOR_CHANNEL_COUNT - 1; b >= 0; b--)
         {
-          for (int8_t c = 6; c >= 0; c--)
+          for (int8_t c = DC_BITS - 1; c >= 0; c--)
             setBuffer(_DC[b] & (1 << c));
         }
       }
+#endif
+      SPI.endTransaction();
     }
     latch();
   }
@@ -526,10 +545,8 @@ void TLC5955::setBuffer(uint8_t bit)
   _buffer_count--;
   if (_buffer_count == -1)
   {
-    SPI.beginTransaction(mSettings);
     SPI.transfer(_buffer);
     _buffer_count = 7;
     _buffer = 0;
-    SPI.endTransaction();
   }
 }
