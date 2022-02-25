@@ -88,7 +88,6 @@ void setRgbPinOrderSingle(uint16_t channel, uint8_t rPos, uint8_t grPos, uint8_t
 /* Sending data to device (Updating, flushing, latching) */
 void setBuffer(uint8_t bit);
 void setControlModeBit(bool isControlMode);
-void flushBuffer();
 // Returns 0 for success, other for failure
 int updateLeds(double* output_current);
 void clearLeds();

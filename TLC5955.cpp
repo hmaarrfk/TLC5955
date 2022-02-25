@@ -146,15 +146,6 @@ void TLC5955::setAllLedRgb(uint16_t red, uint16_t green, uint16_t blue)
   }
 }
 
-void TLC5955::flushBuffer()
-{
-  setControlModeBit(CONTROL_MODE_OFF);
-  SPI.beginTransaction(mSettings);
-  for (int16_t fCount = 0; fCount < _tlc_count * TOTAL_REGISTER_SIZE / 8; fCount++)
-    SPI.transfer(0);
-  SPI.endTransaction();
-}
-
 void TLC5955::setControlModeBit(bool is_control_mode)
 {
   // Make sure latch is low
