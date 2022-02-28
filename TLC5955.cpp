@@ -429,6 +429,9 @@ void TLC5955::updateControl(int repeat)
       // after we have setup the transaction
       old_ctar0 = KINETISK_SPI0.CTAR0;
 #endif
+      // Table 23
+      // DC, MC, BC, FC data writes are selected when the MSB[1:9] bits are 96h (HLLHLHHL).
+      //            HLLHLHHL
       SPI.transfer(B10010110);
 
       // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
