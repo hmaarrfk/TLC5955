@@ -404,10 +404,19 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
   dotCorrection[2] = _DC[2];
 }
 
+#ifdef KINETISK
+#define SPI_CTAR_FMSZ_MASK (0xF << 27)
+#define SPI_CTAR_FMSZ_MASK_NOT (0xFFFF'FFFF & (~SPI_CTAR_FMSZ_MASK))
+#endif
+
 // Update the Control Register (changes settings)
 void TLC5955::updateControl(int repeat)
 {
   int a;
+#ifdef KINETISK
+  uint32_t old_ctar0;
+#endif
+
   for (int repeatCtr = 0; repeatCtr < repeat; repeatCtr++)
   {
     for (int chip = _tlc_count - 1; chip >= 0; chip--)
@@ -415,6 +424,11 @@ void TLC5955::updateControl(int repeat)
       _buffer_count = 7;
       setControlModeBit(CONTROL_MODE_ON);
       SPI.beginTransaction(mSettings);
+#ifdef KINETISK
+      // Get the old ctar0 (associated with SPI.transfer
+      // after we have setup the transaction
+      old_ctar0 = KINETISK_SPI0.CTAR0;
+#endif
       SPI.transfer(B10010110);
 
       // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
@@ -442,6 +456,24 @@ void TLC5955::updateControl(int repeat)
         setBuffer((_MC[0] & (1 << a)));
 
       // Dot Correction Data
+#ifdef KINETISK
+      // This optimization only works because the number of bits in the buffer
+      // amounts to exactly a multiple of 8 bits
+      // Assume we are using SPI0
+      // Of the 769 bits to send, there are exactly
+      // 48 * 7 bits to send, == 336 == 42 * 8
+      // Therefore setBuffer would have flushed the bits in the transaction
+      // Send DC_BITS (7) bits at once
+      KINETISK_SPI0.CTAR0 = (old_ctar0 & SPI_CTAR_FMSZ_MASK_NOT) | SPI_CTAR_FMSZ(DC_BITS-1);
+      for (a = LEDS_PER_CHIP - 1; a >= 0; a--)
+      {
+        for (int b = COLOR_CHANNEL_COUNT - 1; b >= 0; b--)
+        {
+          SPI.transfer(_DC[b]);
+        }
+      }
+      KINETISK_SPI0.CTAR0 = old_ctar0;
+#else
       for (a = LEDS_PER_CHIP - 1; a >= 0; a--)
       {
         for (int b = COLOR_CHANNEL_COUNT - 1; b >= 0; b--)
@@ -450,6 +482,7 @@ void TLC5955::updateControl(int repeat)
             setBuffer(_DC[b] & (1 << c));
         }
       }
+#endif
       SPI.endTransaction();
     }
     latch();
