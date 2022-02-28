@@ -176,20 +176,16 @@ void TLC5955::setControlModeBit(bool is_control_mode)
   {
     // Manually Write control sequence
     digitalWrite(_spi_mosi, HIGH);          // Set MSB to HIGH
-    digitalWrite(_spi_clk, LOW);                  // Clock
-    // Pulse
-    digitalWrite(_spi_clk, HIGH);
-    digitalWrite(_spi_clk, LOW);
-    // see datasheet HLLHLHHL
-    shiftOut(_spi_mosi, _spi_clk, MSBFIRST, B10010110);
   }
   else
   {
     digitalWrite(_spi_mosi, LOW); // Set MSB to LOW
-    digitalWrite(_spi_clk, LOW); // Clock Pulse
-    digitalWrite(_spi_clk, HIGH);
-    digitalWrite(_spi_clk, LOW);
   }
+  digitalWrite(_spi_clk, LOW);                  // Clock
+  // Pulse
+  digitalWrite(_spi_clk, HIGH);
+  digitalWrite(_spi_clk, LOW);
+
   SPI.begin();
 }
 
@@ -417,6 +413,8 @@ void TLC5955::updateControl(int repeat)
     {
       _buffer_count = 7;
       setControlModeBit(CONTROL_MODE_ON);
+      SPI.beginTransaction(mSettings);
+      SPI.transfer(B10010110);
 
       // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
       for (int16_t a = 0; a < CONTROL_ZERO_BITS; a++)
@@ -448,6 +446,7 @@ void TLC5955::updateControl(int repeat)
             setBuffer(_DC[b] & (1 << c));
         }
       }
+      SPI.endTransaction();
     }
     latch();
   }
@@ -479,12 +478,10 @@ void TLC5955::setBuffer(uint8_t bit)
 {
   bitWrite(_buffer, _buffer_count, bit);
   _buffer_count--;
-  SPI.beginTransaction(mSettings);
   if (_buffer_count == -1)
   {
     SPI.transfer(_buffer);
     _buffer_count = 7;
     _buffer = 0;
   }
-  SPI.endTransaction();
 }
