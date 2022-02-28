@@ -407,6 +407,7 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
 // Update the Control Register (changes settings)
 void TLC5955::updateControl(int repeat)
 {
+  int a;
   for (int repeatCtr = 0; repeatCtr < repeat; repeatCtr++)
   {
     for (int chip = _tlc_count - 1; chip >= 0; chip--)
@@ -417,32 +418,35 @@ void TLC5955::updateControl(int repeat)
       SPI.transfer(B10010110);
 
       // Add CONTROL_ZERO_BITS blank bits to get to correct position for DC/FC
-      for (int16_t a = 0; a < CONTROL_ZERO_BITS; a++)
+      for (a = 0; a + 16 < CONTROL_ZERO_BITS; a = a + 16)
+          SPI.transfer16(0);
+
+      for (; a < CONTROL_ZERO_BITS; a++)
         setBuffer(0);
       // 5-bit Function Data
-      for (int8_t a = FC_BITS - 1; a >= 0; a--)
+      for (a = FC_BITS - 1; a >= 0; a--)
         setBuffer((_function_data & (1 << a)));
       // Brightness Control Data
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[2] & (1 << a)));
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[1] & (1 << a)));
-      for (int8_t a = BC_BITS - 1; a >= 0; a--)
+      for (a = BC_BITS - 1; a >= 0; a--)
         setBuffer((_BC[0] & (1 << a)));
       // Maximum Current Data
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[2] & (1 << a)));
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[1] & (1 << a)));
-      for (int8_t a = MC_BITS - 1; a >= 0; a--)
+      for (a = MC_BITS - 1; a >= 0; a--)
         setBuffer((_MC[0] & (1 << a)));
 
       // Dot Correction Data
-      for (int8_t a = LEDS_PER_CHIP - 1; a >= 0; a--)
+      for (a = LEDS_PER_CHIP - 1; a >= 0; a--)
       {
-        for (int8_t b = COLOR_CHANNEL_COUNT - 1; b >= 0; b--)
+        for (int b = COLOR_CHANNEL_COUNT - 1; b >= 0; b--)
         {
-          for (int8_t c = 6; c >= 0; c--)
+          for (int c = 6; c >= 0; c--)
             setBuffer(_DC[b] & (1 << c));
         }
       }
