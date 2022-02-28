@@ -40,7 +40,6 @@
 #define CONTROL_ZERO_BITS 389   /* Bits required for correct control reg size */
 #define TOTAL_REGISTER_SIZE 76
 #define LATCH_DELAY 1
-#define CONTROL_WRITE_COUNT 2
 #define CONTROL_MODE_ON 1
 #define CONTROL_MODE_OFF 0
 
@@ -410,11 +409,11 @@ void TLC5955::getDotCorrection(uint8_t* dotCorrection)
 }
 
 // Update the Control Register (changes settings)
-void TLC5955::updateControl()
+void TLC5955::updateControl(int repeat)
 {
-  for (int8_t repeatCtr = 0; repeatCtr < CONTROL_WRITE_COUNT; repeatCtr++)
+  for (int repeatCtr = 0; repeatCtr < repeat; repeatCtr++)
   {
-    for (int8_t chip = _tlc_count - 1; chip >= 0; chip--)
+    for (int chip = _tlc_count - 1; chip >= 0; chip--)
     {
       _buffer_count = 7;
       setControlModeBit(CONTROL_MODE_ON);
